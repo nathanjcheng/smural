@@ -13,8 +13,16 @@ function App() {
   const RESPONSE_TYPE = "token"
   //SPOTIFY CONSTANTS
 
-    const [token, setToken] = useState()
+  const [token, setToken] = useState("")
 
+  useEffect (() => {
+    const hash = window.location.hash
+    let token = window.localStorage.getItem("token")
+
+    if (!token && hash) {
+      token = hash.substring(1).split("&").find(elem => elem.startsWith("access_token")).split("=")[1]
+    }
+  })
 
   return (
     <div className="App">
