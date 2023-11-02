@@ -2,6 +2,7 @@ import logo from './logo.svg';
 import React from 'react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import Grid from './grid';
 
 import './App.css';
 
@@ -53,22 +54,29 @@ function App() {
   }
 
   const renderArtists = () => {
-  return artists.map(artist => (
+  return (
+  <Grid>
+  {artists.map((artist) => (
     <div key={artist.id}>
       {artist.images.length ? (
-        <img width={"50%"} src={artist.images[0].url} alt=""/>
+        <img width={"50%"} src={artist.images[0].url} alt={artist.name}/>
       ) : (
         <div>No Image</div>
       )}
       {artist.name}
     </div>
-  ));
-}
+  ))}
+  </Grid>
+  );
+};
 
 
   return (
     <div className="App">
       <header className="App-header">
+        <h1>Grid:</h1>
+        {Grid()}
+        <h1>End of Grid</h1>
         <h1>Spotify React</h1>
         {!token ? 
         <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}>
