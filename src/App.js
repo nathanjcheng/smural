@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const CLIENT_ID = 'your_spotify_client_id'; // Replace with your Spotify client ID
+const CLIENT_ID = '7a2ddff09e4a43869b24d7e78c2cd9a4'; // Replace with your Spotify client ID
 const REDIRECT_URI = 'http://localhost:3000'; // Replace with your redirect URI
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
@@ -61,6 +61,8 @@ function App() {
         },
       });
       setArtists(response.data.items);
+      console.log(response.data.items)
+      //Console Log Prompt
     } catch (error) {
       console.error('Error getting top artists:', error);
     }
