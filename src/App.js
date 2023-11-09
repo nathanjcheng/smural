@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const CLIENT_ID = '7a2ddff09e4a43869b24d7e78c2cd9a4'; // Replace with your Spotify client ID
+const CLIENT_ID = 'a791dd921e874a8480677038c38b2d60'; // Replace with your Spotify client ID
 const REDIRECT_URI = 'http://localhost:3000'; // Replace with your redirect URI
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
 
-const OPENAI_API_KEY = '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'; // Replace with your OpenAI API key
-const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/engines/davinci/completions';
-
+const OPENAI_API_KEY = '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'; // Replace with your OpenAI API key
+const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/completions';
 
 function App() {
   const [token, setToken] = useState(null);
   const [artists, setArtists] = useState([]);
   const [prompt, setPrompt] = useState('');
+  const [openaiResponse, setOpenaiResponse] = useState('');
 
   useEffect(() => {
     // Check if a Spotify access token is in the URL hash on page load
@@ -74,7 +74,8 @@ function App() {
         OPENAI_API_ENDPOINT,
         {
           model: 'text-davinci-003', // Specify the model
-          prompt: prompt,
+          prompt: prompt + "(In 50 Tokens)",
+          max_tokens: 50,
         },
         {
           headers: {
@@ -83,14 +84,15 @@ function App() {
           },
         }
       );
-
+      console.log(prompt)
+      console.log(openaiResponse)
       if (response.status === 200) {
-        console.log(response.data.choices[0].text.trim());
+        setOpenaiResponse(response.data.choices[0].text.trim());
       } else {
         console.error('OpenAI API returned an error:', response.data);
       }
     } catch (error) {
-      console.error('Error calling OpenAI API:', error);
+      console.error('OPEN AI ERROR ERROR ERROR', error);
     }
   };
 
@@ -116,8 +118,7 @@ function App() {
               ))}
             </ul>
           </div>
-        )
-        }
+        )}
 
         <div>
           <textarea
@@ -128,6 +129,13 @@ function App() {
           />
           <button onClick={callOpenAIAPI}>Call OpenAI API</button>
         </div>
+
+        {openaiResponse && (
+          <div>
+            <h2>OpenAI Response:</h2>
+            <p>{openaiResponse}</p>
+          </div>
+        )}
       </header>
     </div>
   );
