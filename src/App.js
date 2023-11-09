@@ -6,8 +6,9 @@ const REDIRECT_URI = 'http://localhost:3000'; // Replace with your redirect URI
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
 
-const OPENAI_API_KEY = 'your_openai_api_key'; // Replace with your OpenAI API key
-const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/engines/davinci/completions'; // Adjust the endpoint as needed
+const OPENAI_API_KEY = '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'; // Replace with your OpenAI API key
+const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/engines/davinci/completions';
+
 
 function App() {
   const [token, setToken] = useState(null);
@@ -61,8 +62,7 @@ function App() {
         },
       });
       setArtists(response.data.items);
-      console.log(response.data.items)
-      //Console Log Prompt
+      console.log(response.data.items);
     } catch (error) {
       console.error('Error getting top artists:', error);
     }
@@ -78,12 +78,17 @@ function App() {
         },
         {
           headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
             'Content-Type': 'application/json',
           },
         }
       );
-      console.log(response.data.choices[0].text.trim());
+
+      if (response.status === 200) {
+        console.log(response.data.choices[0].text.trim());
+      } else {
+        console.error('OpenAI API returned an error:', response.data);
+      }
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
     }
@@ -111,7 +116,8 @@ function App() {
               ))}
             </ul>
           </div>
-        )}
+        )
+        }
 
         <div>
           <textarea
