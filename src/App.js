@@ -6,7 +6,7 @@ const REDIRECT_URI = 'http://localhost:3000';
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
 
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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';
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/completions';
 const DALLE_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
@@ -20,9 +20,7 @@ const DALLE_PROMPT = "Given this list of artists, "
 function App() {
   const [token, setToken] = useState(null);
   const [artists, setArtists] = useState([]);
-  const [artistNames, setArtistNames] = useState([]);
   const [prompt, setPrompt] = useState('');
-  const [openaiResponse, setOpenaiResponse] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
 
   useEffect(() => {
@@ -50,10 +48,30 @@ function App() {
     localStorage.removeItem('spotifyAccessToken');
   };
 
+  const handleGenerateImage = async () => {
+    try {
+      const topArtists = await getTopArtists();
+
+      if (topArtists.length > 0) {
+        const openaiResponse = await callOpenAIAPI(topArtists);
+
+        if (openaiResponse) {
+          await callDALLEAPI(openaiResponse);
+        } else {
+          console.error('No OpenAI response to generate image.');
+        }
+      } else {
+        console.error('No artists found.');
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
+  };
+
   const getTopArtists = async () => {
     try {
       if (!token) {
-        return;
+        return [];
       }
 
       const response = await axios.get('https://api.spotify.com/v1/me/top/artists', {
@@ -68,17 +86,17 @@ function App() {
 
       setArtists(response.data.items);
 
-      const artistNames = response.data.items.map((artist) => artist.name);
-      setArtistNames(artistNames);
-
-      console.log('Your Top Artists:', artistNames);
+      console.log('Your Top Artists:', response.data.items.map((artist) => artist.name));
+      return response.data.items;
     } catch (error) {
       console.error('Error getting top artists:', error);
+      return [];
     }
   };
 
-  const callOpenAIAPI = async () => {
+  const callOpenAIAPI = async (topArtists) => {
     try {
+      const artistNames = topArtists.map((artist) => artist.name);
       const promptWithArtists = `This is the list: (${artistNames.join(', ')}) ${DALLE_PROMPT} (Make it fit in 40 Tokens without cutting off.)`;
       const response = await axios.post(
         OPENAI_API_ENDPOINT,
@@ -94,23 +112,16 @@ function App() {
           },
         }
       );
-      setOpenaiResponse(response.data.choices[0].text.trim());
       console.log('OpenAI Response:', response.data.choices[0].text.trim());
+      return response.data.choices[0].text.trim();
     } catch (error) {
       console.error('OPEN AI ERROR', error);
+      return '';
     }
   };
 
-  const callDALLEAPI = async () => {
+  const callDALLEAPI = async (openaiResponse) => {
     try {
-      console.log("Starting DALL-E API call...");
-      console.log("OpenAI Response:", openaiResponse);
-  
-      if (!openaiResponse) {
-        console.error('No OpenAI response to generate image.');
-        return;
-      }
-  
       const response = await axios.post(DALLE_API_ENDPOINT, {
         model: "dall-e-3",
         prompt: openaiResponse,
@@ -123,13 +134,12 @@ function App() {
           'Content-Type': 'application/json',
         },
       });
-  
-      console.log("DALL-E API Response:", response.data); // Log the entire response object
-  
+
+      console.log("DALL-E API Response:", response.data);
+
       if (response.data && response.data.data && response.data.data.length > 0) {
-        const generatedImageURL = response.data.data[0].url; // Access the URL from the correct place in the response
+        const generatedImageURL = response.data.data[0].url;
         console.log("Generated Image URL:", generatedImageURL);
-  
         setGeneratedImage(generatedImageURL);
       } else {
         console.error('No generated image URL found in the response.');
@@ -146,7 +156,7 @@ function App() {
         {token ? (
           <>
             <button onClick={handleLogout}>Logout</button>
-            <button onClick={getTopArtists}>Get Top Artists</button>
+            <button onClick={handleGenerateImage}>Get Top Artists and Generate Image</button>
           </>
         ) : (
           <button onClick={handleLogin}>Login to Spotify</button>
@@ -162,17 +172,6 @@ function App() {
             </ul>
           </div>
         )}
-
-        <div>
-          <textarea
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Enter your OpenAI prompt here"
-            cols={50}
-            rows={10}
-          />
-          <button onClick={callOpenAIAPI}>Call OpenAI API</button>
-          <button onClick={callDALLEAPI}>Generate Image</button>
-        </div>
 
         {generatedImage && (
           <div>
