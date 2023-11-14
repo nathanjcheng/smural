@@ -1,31 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const CLIENT_ID = 'a791dd921e874a8480677038c38b2d60'; // Replace with your Spotify client ID
-const REDIRECT_URI = 'http://localhost:3000'; // Replace with your redirect URI
+const CLIENT_ID = '7a2ddff09e4a43869b24d7e78c2cd9a4';
+const REDIRECT_URI = 'http://localhost:3000';
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
 
-const OPENAI_API_KEY = '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'; // Replace with your OpenAI API key
+const OPENAI_API_KEY = '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';
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/completions';
+const DALLE_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
+
+const DALLE_PROMPT = "Given this list of artists, "
+  + "For each artist, think of an item that captures the essence of the artist."
+  + "Now create an image prompt where the item of the first artist is in the forefront."
+  + "And all the other items are in a mural in the back in an artistic fashion."
+  + "Don't include the names of the artists in the prompt."
+  + "Only respond with the image prompt.";
 
 function App() {
   const [token, setToken] = useState(null);
   const [artists, setArtists] = useState([]);
+  const [artistNames, setArtistNames] = useState([]);
   const [prompt, setPrompt] = useState('');
   const [openaiResponse, setOpenaiResponse] = useState('');
+  const [generatedImage, setGeneratedImage] = useState('');
 
   useEffect(() => {
-    // Check if a Spotify access token is in the URL hash on page load
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
 
     if (accessToken) {
-      // Store the access token in local storage for later use
       localStorage.setItem('spotifyAccessToken', accessToken);
       setToken(accessToken);
     } else {
-      // Check if an access token is stored in local storage
       const storedToken = localStorage.getItem('spotifyAccessToken');
       if (storedToken) {
         setToken(storedToken);
@@ -34,13 +41,11 @@ function App() {
   }, []);
 
   const handleLogin = () => {
-    // Redirect the user to Spotify login with the required scopes
     const scopes = 'user-top-read';
     window.location.href = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&response_type=${RESPONSE_TYPE}`;
   };
 
   const handleLogout = () => {
-    // Clear the token from state and local storage
     setToken(null);
     localStorage.removeItem('spotifyAccessToken');
   };
@@ -48,7 +53,6 @@ function App() {
   const getTopArtists = async () => {
     try {
       if (!token) {
-        // Handle authentication error or prompt the user to log in
         return;
       }
 
@@ -61,8 +65,13 @@ function App() {
           limit: 10,
         },
       });
+
       setArtists(response.data.items);
-      console.log(response.data.items);
+
+      const artistNames = response.data.items.map((artist) => artist.name);
+      setArtistNames(artistNames);
+
+      console.log('Your Top Artists:', artistNames);
     } catch (error) {
       console.error('Error getting top artists:', error);
     }
@@ -70,11 +79,12 @@ function App() {
 
   const callOpenAIAPI = async () => {
     try {
+      const promptWithArtists = `This is the list: (${artistNames.join(', ')}) ${DALLE_PROMPT} (Make it fit in 40 Tokens without cutting off.)`;
       const response = await axios.post(
         OPENAI_API_ENDPOINT,
         {
-          model: 'text-davinci-003', // Specify the model
-          prompt: prompt + "(In 50 Tokens)",
+          model: 'text-davinci-003',
+          prompt: promptWithArtists,
           max_tokens: 50,
         },
         {
@@ -84,15 +94,48 @@ function App() {
           },
         }
       );
-      console.log(prompt)
-      console.log(openaiResponse)
-      if (response.status === 200) {
-        setOpenaiResponse(response.data.choices[0].text.trim());
+      setOpenaiResponse(response.data.choices[0].text.trim());
+      console.log('OpenAI Response:', response.data.choices[0].text.trim());
+    } catch (error) {
+      console.error('OPEN AI ERROR', error);
+    }
+  };
+
+  const callDALLEAPI = async () => {
+    try {
+      console.log("Starting DALL-E API call...");
+      console.log("OpenAI Response:", openaiResponse);
+  
+      if (!openaiResponse) {
+        console.error('No OpenAI response to generate image.');
+        return;
+      }
+  
+      const response = await axios.post(DALLE_API_ENDPOINT, {
+        model: "dall-e-3",
+        prompt: openaiResponse,
+        size: "1024x1024",
+        quality: "standard",
+        n: 1,
+      }, {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      console.log("DALL-E API Response:", response.data); // Log the entire response object
+  
+      if (response.data && response.data.data && response.data.data.length > 0) {
+        const generatedImageURL = response.data.data[0].url; // Access the URL from the correct place in the response
+        console.log("Generated Image URL:", generatedImageURL);
+  
+        setGeneratedImage(generatedImageURL);
       } else {
-        console.error('OpenAI API returned an error:', response.data);
+        console.error('No generated image URL found in the response.');
       }
     } catch (error) {
-      console.error('OPEN AI ERROR ERROR ERROR', error);
+      console.error('DALL-E API Error', error);
     }
   };
 
@@ -128,12 +171,13 @@ function App() {
             rows={10}
           />
           <button onClick={callOpenAIAPI}>Call OpenAI API</button>
+          <button onClick={callDALLEAPI}>Generate Image</button>
         </div>
 
-        {openaiResponse && (
+        {generatedImage && (
           <div>
-            <h2>OpenAI Response:</h2>
-            <p>{openaiResponse}</p>
+            <h2>Generated Image:</h2>
+            <img src={generatedImage} alt="Generated by DALL-E" />
           </div>
         )}
       </header>
