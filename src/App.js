@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const CLIENT_ID = '7a2ddff09e4a43869b24d7e78c2cd9a4';
+const CLIENT_ID = '';
 const REDIRECT_URI = 'http://localhost:3000';
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
 
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '';
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/completions';
 const DALLE_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
 const DALLE_PROMPT = "Given this list of artists, "
   + "For each artist, think of an item that captures the essence of the artist."
   + "Now create an image prompt where the item of the first artist is in the forefront."
-  + "And all the other items are in a mural in the back in an artistic fashion."
+  + "And all the other items are in sa mural in the back in an artistic fashion."
   + "Don't include the names of the artists in the prompt."
   + "Only respond with the image prompt.";
 
@@ -152,7 +152,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Spotify React</h1>
+        <h1>Smural</h1>
         {token ? (
           <>
             <button onClick={handleLogout}>Logout</button>
