@@ -11,11 +11,11 @@ const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/completions';
 const DALLE_API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
 const DALLE_PROMPT = "Given this list of artists, "
-  + "For each artist, think of an item that captures the essence of the artist."
-  + "Now create an image prompt where the item of the first artist is in the forefront."
-  + "And all the other items are in sa mural in the back in an artistic fashion."
+  + "For top three artists, think of an item that relates to the artist."
+  + "Create an image prompt where all the other items are in a artistic abstract mural."
   + "Don't include the names of the artists in the prompt."
-  + "Only respond with the image prompt.";
+  + "Only respond with the image prompt."
+  + "Don't give a link to an image.";
 
 function App() {
   const [token, setToken] = useState(null);
@@ -124,7 +124,7 @@ function App() {
     try {
       const response = await axios.post(DALLE_API_ENDPOINT, {
         model: "dall-e-3",
-        prompt: openaiResponse,
+        prompt: openaiResponse + "abstract mural",
         size: "1024x1024",
         quality: "standard",
         n: 1,
